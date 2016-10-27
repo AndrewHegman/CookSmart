@@ -34,7 +34,7 @@ int8_t parseInstructionReturn = 0;
 uint32_t statusTimeStamp = 0;
 uint32_t tempTimeStamp = 0;
 uint32_t foodPodTimeStamp = 0;
-uint8_t dummyMessageArray[1][3] = {{0x10,0x04,0xb0}};
+uint8_t dummyMessageArray[1][3] = {{0x0a,0x00,0x01}};
 
 void setup() {
   if (VERBOSE)
@@ -46,34 +46,6 @@ void setup() {
   thermocouple.begin();
   thermocouple.setThermocoupleType(MAX31856_TCTYPE_K);
   
-  /*
-  float test_temp = thermocouple.readThermocoupleTemperature();
-  uint8_t fault = thermocouple.readFault();
-  while(test_temp == 0){
-    test_temp = thermocouple.readThermocoupleTemperature();
-    fault = thermocouple.readFault();
-    if (fault) {
-      if (fault & MAX31856_FAULT_CJRANGE) Serial.println("Cold Junction Range Fault");
-      if (fault & MAX31856_FAULT_TCRANGE) Serial.println("Thermocouple Range Fault");
-      if (fault & MAX31856_FAULT_CJHIGH)  Serial.println("Cold Junction High Fault");
-      if (fault & MAX31856_FAULT_CJLOW)   Serial.println("Cold Junction Low Fault");
-      if (fault & MAX31856_FAULT_TCHIGH)  Serial.println("Thermocouple High Fault");
-      if (fault & MAX31856_FAULT_TCLOW)   Serial.println("Thermocouple Low Fault");
-      if (fault & MAX31856_FAULT_OVUV)    Serial.println("Over/Under Voltage Fault");
-      if (fault & MAX31856_FAULT_OPEN)    Serial.println("Thermocouple Open Fault");
-    }else{
-      Serial.println("No faults detected");
-    }
-    Serial.print("Test temp: ");
-    Serial.println(test_temp);
-    
-    delay(500);
-  }
-
-  
-  Serial.println(test_temp);
-  
-  */
   Wire.onReceive(ReceiveEvent);
   Wire.onRequest(RequestEvent);
 
@@ -92,14 +64,12 @@ void setup() {
 
   digitalWrite(HEATING_ELEMENT_RELAY, LOW);
   digitalWrite(WATER_PUMP_RELAY, LOW);
-  
+  foodPodMotor->setSpeed(10);
+  //while(1);
   
   if(MESSAGE_TESTING){
-    SendDummyMessage(3, dummyMessageArray);
+    SendDummyMessage(1, dummyMessageArray);
   }
-  //PrintInstructions();
-  
-  
 }
 
 void loop() {
@@ -110,13 +80,6 @@ void loop() {
       if(MANUAL_LED_CONTROL)
         digitalWrite(STIRRING_LED, HIGH);
       ChangeStirringMotor(stirringMotor, 1, SYSTEM_TESTING, 255);
-      
-      //if(!stirringOneShot){
-        //stirringTime += millis();
-      //}
-      //Serial.print("Time: ");
-      //Serial.println(stirringTime);
-      //stirringOneShot = true;
       stirringTime += millis();
     }
     
@@ -182,17 +145,15 @@ void loop() {
     if (instr_foodPod){
       if(MANUAL_LED_CONTROL)
         digitalWrite(FOOD_POD_LED, HIGH);
-      //Serial.println("Here");
       
-      CloseFoodPod(foodPodServo, SYSTEM_TESTING, 90);
+      CloseFoodPod(foodPodServo, SYSTEM_TESTING, 20);
       delay(FOOD_POD_DELAY);
       turningFoodPods = true;
       foodPodOpen = false;
-      //Serial.println(foodPodToTurnTo);
+      
       ChangeFoodPodMotor(foodPodMotor, foodPodToTurnTo, SYSTEM_TESTING);
-      //Serial.println("Here1");
       delay(FOOD_POD_DELAY);
-      OpenFoodPod(foodPodServo, SYSTEM_TESTING, 135);
+      OpenFoodPod(foodPodServo, SYSTEM_TESTING, 70);
       turningFoodPods = false;
       foodPodOpen = true;
       instr_foodPod = 0;
@@ -217,8 +178,6 @@ void loop() {
       if (millis() > statusTimeStamp + 100){
         //PrintStatus();
         PrintTempSensor();
-        //thermocouple.readThermocoupleTemperature();
-        //Serial.println(instructionIsConcurrent);
         statusTimeStamp = millis();
       }
     }
@@ -233,9 +192,6 @@ void PrintTempSensor(){
     Serial.println(" (C)");
   //}
 }
-
-//void PrintStatus(){}
-
 
 void PrintStatus(){
   if(VERBOSE){

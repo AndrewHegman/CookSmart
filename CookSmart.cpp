@@ -113,14 +113,6 @@ void ParseInstruction(){
 		break;
 
 	case 0x02:
-	/*
-		heating = true;
-		globalHeating = true;
-		currentHeatSetting = temperatureArray[GET_HEAT(Instr.MSB)];
-		currentHeatTimeMaster = GET_TIME(Instr.Middle, Instr.LSB)*1000L + millis();
-		currentHeatTime = GET_HEATING_TIME(currentHeatSetting*1.1F, currentTemperature)*1000L+millis();
-		TurnHeatingElementON();
-		*/
 		targetTemperature = temperatureArray[GET_HEAT(Instr.MSB)];
 		heatingTime = GET_TIME(Instr.Middle, Instr.LSB)*((uint32_t)1000);
 		instr_heating = true;
@@ -228,10 +220,10 @@ void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t destPod, boo
 	uint16_t podsToTurn = 0;
   	if ((abs((currentFoodPodPosition - destPod)) < 12/2 && currentFoodPodPosition < destPod) || 
        (abs((currentFoodPodPosition - destPod)) > 12/2 && currentFoodPodPosition > destPod)){
-    	dir = 1;
+    	dir = 2;
     
   	}else{
-    	dir = 2;
+    	dir = 1;
   	}
 	//Arduino doesn't handle negative modulo well, so this is how it can be done otherwise:
 	if(currentFoodPodPosition == -1){
@@ -244,22 +236,8 @@ void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t destPod, boo
 	if(!emergencyStop){
 		delay(750);
 		podsToTurn = min(mod(currentFoodPodPosition-destPod, 12), mod(destPod-currentFoodPodPosition, 12));
-		/*
-		Serial.print("Pods to turn: ");
-		Serial.println(podsToTurn);
-		Serial.print("Steps to turn: ");
-		Serial.println(podsToTurn * 30);
-		Serial.print("Direction: ");
-		Serial.println(dir);
-		Serial.print("Turning ");
-		Serial.print(podsToTurn * 30);
-		Serial.println(" steps\n");
-		*/
 		foodPodMotor->step(podsToTurn * 30, dir, INTERLEAVE);
-		Serial.println("Here2");
 		currentFoodPodPosition = destPod;
-		//delay(500);
-		//OpenFoodPod(foodPodServo, testing, 135);
 	}
 }
 
@@ -282,22 +260,19 @@ float CalculateDegressToTurn(uint8_t currentPosition, uint8_t foodPod){
 	return(degreesToTurn);
 }
 
-void OpenFoodPod(Servo foodPodServo, bool testing, uint8_t degrees=135){
-	Serial.println("Here");
+void OpenFoodPod(Servo foodPodServo, bool testing, uint8_t degrees){
 	if(VERBOSE)
 		Serial.println("Open food pod");
 	if(!testing);
 	foodPodServo.write(degrees);
-	//currentFoodPodTime = FOOD_POD_TIME + millis();
 	foodPodOpen = true;
 }
 
-void CloseFoodPod(Servo foodPodServo, bool testing, uint8_t degrees=90){
-	Serial.println("here");
+void CloseFoodPod(Servo foodPodServo, bool testing, uint8_t degrees){
 	if(VERBOSE)
 		Serial.println("Close food pod");
 	if(!testing)
-		foodPodServo.write(90);
+		foodPodServo.write(degrees);
 	foodPodOpen = false;
 }
 
@@ -359,8 +334,7 @@ uint32_t CalculatePumpingTime(uint32_t amtOZ){
 }
 
 uint16_t GetHeatingElementTemperature(Adafruit_MAX31856 thermocouple){
-	//Read thermocouple
-	return(thermocouple.readFarenheit());
+	return(thermocouple.readThermocoupleTemperature());
 }
 
 void ChangeHeatingElement(bool state, bool testing){
@@ -393,21 +367,6 @@ void SendDummyMessage(uint8_t numMessages, uint8_t messageArray[][3]){
 		++instructionCount; 
 	}
 	instructionReceived = true;
-	/*
-	DummyMsg.MSB = 0x03;
-	DummyMsg.Middle = 0xC0;
-	DummyMsg.LSB = 0x01;
-	instructionBuffer[instructionCount] = DummyMsg;
-	++instructionCount;
-
-	DummyMsg.MSB = 0x18;
-	DummyMsg.Middle = 0x00;
-	DummyMsg.LSB = 0x15;
-	instructionBuffer[instructionCount] = DummyMsg;
-	++instructionCount;
-	instructionReceived = true;
-	*/
-
 }
 
 void FlashEstopLED(){

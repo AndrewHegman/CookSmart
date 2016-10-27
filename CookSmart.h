@@ -1,3 +1,5 @@
+
+//test
 #ifndef MAIN_H
 #define MAIN_H
 
@@ -7,12 +9,13 @@
 #include <Servo.h>
 #include <Wire.h>
 #include <SPI.h>
-#include "Adafruit_MAX31855.h"
+//#include "Adafruit_MAX31855.h"
+#include <Adafruit_MAX31856.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
 
 //Testing definitions
-#define VERBOSE							(false)
+#define VERBOSE							(true)
 
 #define ADDRESS							(0x05)
 #define MSG_IS_ESTOP(INSTR)				(INSTR == 0x40 ? 1:0)
@@ -32,12 +35,11 @@
 #define PHOTO_GATE						(7)
 #define WATER_PUMP_RELAY 				(6)
 #define HEATING_ELEMENT_RELAY			(8)
-#define WATER_PUMP_RELAY                (6)
 #define FOOD_POD_SERVO                  (9)
 #define PUMP_SPEED                      (133L)
-#define TEMP_SENSOR_DO					(3)
-#define TEMP_SENSOR_CS					(4)
-#define TEMP_SENSOR_CLK					(5)
+#define TEMP_SENSOR_DO					(A2)
+#define TEMP_SENSOR_CS					(A3)
+#define TEMP_SENSOR_CLK					(A4)
 #define TEMP_SENSOR_DIN					(A5)
 
 
@@ -50,7 +52,7 @@
 #define MANUAL_LED_CONTROL				(false)
 
 //Temperature constants (Farhenheit or Celsius????)
-#define HEAT_LEVEL_0                    (157)  
+#define HEAT_LEVEL_0                    (15)  
 #define HEAT_LEVEL_1                    (237)
 #define HEAT_LEVEL_2                    (287)
 #define HEAT_LEVEL_3                    (350)
@@ -60,11 +62,11 @@
 //Logic for instructions, because I'm lazy and my code is confusing..
 #define NO_ACTIVE_INSTRUCTIONS			(!instructionIsConcurrent && !instr_heating && !instr_pumping && !instr_stirring && !turningFoodPods)
 #define CHECK_INSTR_HEATING													(instr_heating && !heating)
-#define CHECK_TEMP_BELOW_TARGET(thermocouple, targetTemperature)			!(GetHeatingElementTemperature(thermocouple) <= targetTemperature * 0.1L)
-#define CHECK_TEMP_ABOVE_TARGET(thermocouple, targetTemperature)	        !(GetHeatingElementTemperature(thermocouple) >= targetTemperature * 0.1L)
+#define CHECK_TEMP_BELOW_TARGET(thermocouple, targetTemperature)			(GetHeatingElementTemperature(thermocouple) <= targetTemperature * 1.1L)
+#define CHECK_TEMP_ABOVE_TARGET(thermocouple, targetTemperature)	        (GetHeatingElementTemperature(thermocouple) > targetTemperature * 0.9L)
 
 #define mod(a, b)           			(((a % b) + b) % b)
-#define FOOD_POD_DELAY					(300)	//milliseconds to wait before turning foodPods after 'closing', and before opening
+#define FOOD_POD_DELAY					(1000)	//milliseconds to wait before turning foodPods after 'closing', and before opening
 
 typedef struct{
 	byte MSB;
@@ -112,7 +114,7 @@ void CloseFoodPod(Servo, bool, uint8_t);
 int8_t FindPosZero(Adafruit_StepperMotor&, bool);
 void ChangeWaterPump(uint8_t, bool);
 uint32_t CalculatePumpingTime(uint32_t);
-uint16_t GetHeatingElementTemperature(Adafruit_MAX31855);
+uint16_t GetHeatingElementTemperature(Adafruit_MAX31856);
 void ChangeHeatingElement(bool, bool);
 void UpdateInstructionBuffer();
 void FlashEstopLED();
