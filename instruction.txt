@@ -1,0 +1,1 @@
+uint8_t dummyMessageArray[1][3] = {{0x10,0x04,0xb0}};
