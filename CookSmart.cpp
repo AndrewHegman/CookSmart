@@ -42,25 +42,28 @@ void ReceiveEvent(int useless){  //This variable is literally not used, but it i
 	uint8_t tempBufIndex = 0;
 	uint8_t tempBuf[3];
 	Message MsgRcvd;
-	if(VERBOSE)
-  		Serial.println("Received from master: ");
+	if(VERBOSE_LITE)
+  		Serial.println("*************Received from master: *************");
+
   	while(Wire.available()){
 	    tempBuf[tempBufIndex] = (uint8_t)Wire.read();
+	    if(VERBOSE){
+	    	Serial.println(tempBuf[tempBufIndex]);
+	    }
 	    ++tempBufIndex;
 	    if(tempBufIndex == 3){
 	    	tempBufIndex = 0;
+	    	MsgRcvd.MSB = tempBuf[0];
+		    MsgRcvd.Middle = tempBuf[1];
+		    MsgRcvd.LSB = tempBuf[2];
 	      	if(MSG_IS_ESTOP(MsgRcvd.MSB)){
 	      		MsgRcvd.MSB = tempBuf[0];	//Is this necessary?
 	        	emergencyStop = true;
 	      	}else{
-		      	MsgRcvd.MSB = tempBuf[0];
-		        MsgRcvd.Middle = tempBuf[1];
-		        MsgRcvd.LSB = tempBuf[2];
 		        instructionBuffer[instructionCount] = MsgRcvd;
-
 		        ++instructionCount;
 		        instructionReceived = true;
-		        if(VERBOSE){
+		        if(VERBOSE_LITE){
 		        	Serial.print("instruction count: ");
 		        	Serial.println(instructionCount);
 		        }
@@ -75,7 +78,7 @@ void RequestEvent(){
 
 	uint8_t firstByteToSend = (turningFoodPods<<3) + (globalHeating<<2) + (stirring<<1) + (pumping);
 	uint8_t secondByteToSend = 0;
-	uint8_t statusToSend[2] = {secondByteToSend, firstByteToSend};
+	uint8_t statusToSend[2] = {firstByteToSend, secondByteToSend};
 
 	if(VERBOSE){
 		Serial.print("First byte: ");
@@ -87,15 +90,24 @@ void RequestEvent(){
 	Wire.write(statusToSend, 2);
 }
 
-void EmergencyStop(Adafruit_DCMotor* stirringMotor){
+void EmergencyStop(Adafruit_DCMotor* stirringMotor, Adafruit_StepperMotor *foodPodMotor){
 	ChangeStirringMotor(stirringMotor, 0, 0, 0);
-	//Turn heating element off
-	//Release stepper motor
-	FlashEstopLED();
+	ChangeHeatingElement(false, false);
+	foodPodMotor->setSpeed(BRAKE);
+	Serial.println("******Emergency Stop!!*******");
+	while(1){}
 }
 
 void ParseInstruction(){
 	Message Instr = instructionBuffer[0];
+	if(VERBOSE){
+		Serial.print("Byte1: ");
+		Serial.println(Instr.MSB);
+		Serial.print("Byte2: ");
+		Serial.println(Instr.Middle);
+		Serial.print("Byte3: ");
+		Serial.println(Instr.LSB);
+	}
 	switch(GET_INSTR_TYPE(Instr.MSB)){
 	case 0x00:
 		waterAmount = GET_WATER_AMT(Instr.MSB, Instr.Middle);
@@ -216,16 +228,10 @@ void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t foodPod, boo
 */
 
 void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t destPod, bool testing){
+	foodPodMotor->setSpeed(10);
 	uint8_t dir = 1;
 	uint16_t podsToTurn = 0;
-  	if ((abs((currentFoodPodPosition - destPod)) < 12/2 && currentFoodPodPosition < destPod) || 
-       (abs((currentFoodPodPosition - destPod)) > 12/2 && currentFoodPodPosition > destPod)){
-    	dir = 2;
-    
-  	}else{
-    	dir = 1;
-  	}
-	//Arduino doesn't handle negative modulo well, so this is how it can be done otherwise:
+	float stepsToTurn = 0;
 	if(currentFoodPodPosition == -1){
 		if(FindPosZero(*foodPodMotor, testing)<0){
 			Serial.println("ERROR - unable to find zero position");
@@ -234,11 +240,39 @@ void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t destPod, boo
 		}  
 	}
 	if(!emergencyStop){
+		if(VERBOSE){
+				Serial.print("Food pod to turn to: ");
+				Serial.println(destPod);
+				Serial.print("Current position: ");
+				Serial.println(currentFoodPodPosition);
+		}
+	  	if ((abs((currentFoodPodPosition - destPod)) < 12/2 && currentFoodPodPosition < destPod) || 
+	       (abs((currentFoodPodPosition - destPod)) > 12/2 && currentFoodPodPosition > destPod)){
+	    	dir = 1;
+	    
+	  	}else{
+	    	dir = 2;
+	  	}
+	  	if(VERBOSE){
+	  		Serial.print("dir: ");
+	  		Serial.println(dir);
+	  	}
+		//Arduino doesn't handle negative modulo well, so this is how it can be done otherwise:
 		delay(750);
 		podsToTurn = min(mod(currentFoodPodPosition-destPod, 12), mod(destPod-currentFoodPodPosition, 12));
-		foodPodMotor->step(podsToTurn * 30, dir, INTERLEAVE);
+		stepsToTurn = (podsToTurn*30)/0.9;
+		Serial.print("Steps to turn (before): ");
+		Serial.println(stepsToTurn);
+		//while(stepsToTurn <  podsToTurn*30){
+			//stepsToTurn += 0.9;
+		//}
+		Serial.print("Steps to turn (after): ");
+		Serial.println(stepsToTurn/0.9);
+		
+		foodPodMotor->step(stepsToTurn, dir, INTERLEAVE);
 		currentFoodPodPosition = destPod;
 	}
+	foodPodMotor->setSpeed(BRAKE);
 }
 
 float CalculateDegressToTurn(uint8_t currentPosition, uint8_t foodPod){
@@ -299,7 +333,7 @@ int8_t FindPosZero(Adafruit_StepperMotor &foodPodMotor, bool testing){
 			}
 		}
 		currentFoodPodPosition = 1;
-		foodPodMotor.step(10, FORWARD, INTERLEAVE);
+		//foodPodMotor.step(10, FORWARD, INTERLEAVE);
 	}
 	return(0);
 }
@@ -328,9 +362,9 @@ void ChangeWaterPump(uint8_t mode, bool testing){
 }
 
 uint32_t CalculatePumpingTime(uint32_t amtOZ){
-	uint32_t amtML;
-	amtML = (amtOZ*29.574F);
-	return(((amtML/PUMP_SPEED)*1000L)+10000L+millis());
+	//uint32_t amtML;
+	//amtML = (amtOZ*29.574F);
+	return(((amtOZ/PUMP_SPEED)*1000L));
 }
 
 uint16_t GetHeatingElementTemperature(Adafruit_MAX31856 thermocouple){
