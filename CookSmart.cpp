@@ -18,7 +18,7 @@ bool globalHeating = false;
 int8_t currentFoodPodPosition = -1;
 bool emergencyStop = false;
 int8_t foodPodToTurnTo = -1;
-
+uint8_t lsb_instr = -1;
 
 //Instruction booleans
 bool instr_TurningFoodPods = false;
@@ -100,6 +100,7 @@ void EmergencyStop(Adafruit_DCMotor* stirringMotor, Adafruit_StepperMotor *foodP
 
 void ParseInstruction(){
 	Message Instr = instructionBuffer[0];
+	lsb_instr = Instr.LSB;
 	if(VERBOSE){
 		Serial.print("Byte1: ");
 		Serial.println(Instr.MSB);
@@ -135,7 +136,7 @@ void ParseInstruction(){
 		instr_stirring = true;
 	break;
 	}
-	instructionIsConcurrent = IS_CONCURRENT(Instr.LSB);
+	//instructionIsConcurrent = IS_CONCURRENT(Instr.LSB);
 }
 
 void UpdateStatusLEDs(){

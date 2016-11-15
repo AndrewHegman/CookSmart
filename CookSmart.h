@@ -27,10 +27,19 @@
 #define GET_INSTR_TYPE(BYTE)            ((BYTE & 0x38) >> 3)
 #define GET_WATER_AMT(MSB, Middle)      ((((MSB & 0x07)<<2)+((Middle & 0xC0)>>6))+1)
 //#define INSTR_ACTIVE_PUMPING			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_heating && !heating) && (!instr_foodPod && !turningFoodPods)) || instructionIsConcurrent)
+
+/*
+#define INSTR_ACTIVE_PUMPING			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_heating && !heating) && (!instr_foodPod && !turningFoodPods)))
+#define INSTR_ACTIVE_STIRRING			((!instructionIsConcurrent && (!instr_pumping && !pumping) && (!instr_heating && !heating) && (!instr_foodPod && !turningFoodPods)))
+#define INSTR_ACTIVE_HEATING			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_pumping && !pumping) && (!instr_foodPod && !turningFoodPods)))
+#define INSTR_ACTIVE_FOODPOD			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_pumping && !pumping) && (!instr_heating && !heating)))
+*/
+
 #define INSTR_ACTIVE_PUMPING			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_heating && !heating) && (!instr_foodPod && !turningFoodPods)) || instructionIsConcurrent)
 #define INSTR_ACTIVE_STIRRING			((!instructionIsConcurrent && (!instr_pumping && !pumping) && (!instr_heating && !heating) && (!instr_foodPod && !turningFoodPods)) || instructionIsConcurrent)
 #define INSTR_ACTIVE_HEATING			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_pumping && !pumping) && (!instr_foodPod && !turningFoodPods)) || instructionIsConcurrent)
 #define INSTR_ACTIVE_FOODPOD			((!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_pumping && !pumping) && (!instr_heating && !heating)) || instructionIsConcurrent)
+
 
 #define FOOD_POD_OPEN_DELAY				(5000)
 
@@ -55,17 +64,17 @@
 #define MANUAL_LED_CONTROL				(false)
 
 //Temperature constants (Farhenheit or Celsius????)
-#define HEAT_LEVEL_0                    (84)  
-#define HEAT_LEVEL_1                    (114)
-#define HEAT_LEVEL_2                    (142)
-#define HEAT_LEVEL_3                    (177)
-#define HEAT_LEVEL_4                    (211)
-#define HEAT_LEVEL_5                    (288)
+#define HEAT_LEVEL_0                    (164)  
+#define HEAT_LEVEL_1                    (194)
+#define HEAT_LEVEL_2                    (222)
+#define HEAT_LEVEL_3                    (257)
+#define HEAT_LEVEL_4                    (291)
+#define HEAT_LEVEL_5                    (400)
 
 //Logic for instructions, because I'm lazy and my code is confusing..
-#define NO_ACTIVE_INSTRUCTIONS			(!instructionIsConcurrent && !instr_heating && !instr_pumping && !instr_stirring && !turningFoodPods)
+#define NO_ACTIVE_INSTRUCTIONS			(!instructionIsConcurrent && (!instr_stirring && !stirring) && (!instr_pumping && !pumping) && (!instr_heating && !heating))
 #define CHECK_INSTR_HEATING													(instr_heating && !heating)
-#define CHECK_TEMP_BELOW_TARGET(currentTemp, targetTemperature)				(currentTemp <= (targetTemperature * 0.9))
+#define CHECK_TEMP_BELOW_TARGET(currentTemp, targetTemperature)				(currentTemp <= (targetTemperature))
 #define CHECK_TEMP_ABOVE_TARGET(currentTemp, targetTemperature)	        	(currentTemp > (targetTemperature * 1.1))
 
 #define mod(a, b)           			(((a % b) + b) % b)
@@ -102,6 +111,7 @@ extern uint16_t targetTemperature;
 extern bool emergencyStop;
 extern uint16_t temperatureArray[6];
 extern bool foodPodOpen;
+extern uint8_t lsb_instr;
 
 void ReceiveEvent(int);
 void RequestEvent();
