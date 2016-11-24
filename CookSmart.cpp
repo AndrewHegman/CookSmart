@@ -238,6 +238,7 @@ void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t destPod, boo
 			Serial.println("ERROR - unable to find zero position");
 			Serial.println("Emergency Stop!");
 			emergencyStop = true;
+			//emergencyStop();
 		}  
 	}
 	if(!emergencyStop){
@@ -262,18 +263,15 @@ void ChangeFoodPodMotor(Adafruit_StepperMotor *foodPodMotor, int8_t destPod, boo
 		delay(750);
 		podsToTurn = min(mod(currentFoodPodPosition-destPod, 12), mod(destPod-currentFoodPodPosition, 12));
 		stepsToTurn = (podsToTurn*30)/0.9;
-		Serial.print("Steps to turn (before): ");
-		Serial.println(stepsToTurn);
-		//while(stepsToTurn <  podsToTurn*30){
-			//stepsToTurn += 0.9;
-		//}
-		Serial.print("Steps to turn (after): ");
-		Serial.println(stepsToTurn/0.9);
+		//Serial.print("Steps to turn (before): ");
+		//Serial.println(stepsToTurn);
+		//Serial.print("Steps to turn (after): ");
+		//Serial.println(stepsToTurn/0.9);
 		
 		foodPodMotor->step(stepsToTurn, dir, INTERLEAVE);
 		currentFoodPodPosition = destPod;
 	}
-	foodPodMotor->setSpeed(BRAKE);
+	//foodPodMotor->setSpeed(BRAKE);
 }
 
 float CalculateDegressToTurn(uint8_t currentPosition, uint8_t foodPod){

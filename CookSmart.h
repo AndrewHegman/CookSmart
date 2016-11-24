@@ -15,8 +15,8 @@
 
 
 //Testing definitions
-#define VERBOSE							(true)
-#define VERBOSE_LITE					(true)
+#define VERBOSE							(false)
+#define VERBOSE_LITE					(false)
 
 #define ADDRESS							(0x05)
 #define MSG_IS_ESTOP(INSTR)				(INSTR == 0x40 ? 1:0)
